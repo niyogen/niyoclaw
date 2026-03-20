@@ -1,0 +1,49 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    name: Run Automated Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        working-directory: ./openclaw-multi-tenant-plugin
+        run: npm install
+
+      - name: Run Tests (tsx)
+        working-directory: ./openclaw-multi-tenant-plugin
+        run: npx tsx tests/router.test.ts
+
+  deploy:
+    name: Deploy to EC2 VPS
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute Remote SSH Commands via deploy.sh
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            if [ ! -d 'niyoclaw' ]; then git clone https://github.com/niyogen/niyoclaw.git; fi
+            cd niyoclaw
+            git pull origin main
+            
+            # Prevent Windows CRLF conflicts in the bash script
+            sed -i 's/\r$//' deploy.sh || true
+            bash deploy.sh
