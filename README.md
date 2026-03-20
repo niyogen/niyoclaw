@@ -1,6 +1,6 @@
-# OpenClaw Multi-Tenant Vibe Coding Plugin
+# NiyoClaw: WhatsApp AI Service Provider
 
-This repository houses the strictly typed, high-performance routing plugin and agent personas for the **OpenClaw** multi-tenant ecosystem. It strictly leverages the 7-Stage "Vibe Coding" lifecycle for perfect human-AI collaboration constraints.
+This repository houses the production-ready, strictly typed WhatsApp routing gateway and multi-tenant AI architecture for the **OpenClaw** ecosystem.
 
 ## Features
 - Dynamic WhatsApp Meta Webhook parsing (`meta-webhook.interfaces.ts`)
