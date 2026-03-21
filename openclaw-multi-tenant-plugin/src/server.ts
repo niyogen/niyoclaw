@@ -12,10 +12,10 @@ const server = http.createServer((req, res) => {
       body += chunk.toString();
     });
     
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const payload = JSON.parse(body);
-        const result = handleIncomingWebhook(payload);
+        const result = await handleIncomingWebhook(payload);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'success', result }));
       } catch (error: any) {

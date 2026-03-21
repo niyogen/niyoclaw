@@ -1,11 +1,15 @@
-import { MetaWebhookPayload } from './meta-webhook.interfaces';
-import { lookupTenant } from '../router/tenant-routing-engine';
+import { MetaWebhookPayload } from './meta-webhook.interfaces.js';
+import { lookupTenant } from '../router/tenant-routing-engine.js';
+import { Agent } from 'openclaw';
+import { DEALMATE_SYSTEM_PROMPT, DEALMATE_TOOLS_CONFIG } from '../tenants/dealmate/dealmate-persona.js';
+import { TOURGUARDIAN_SYSTEM_PROMPT, TOURGUARDIAN_TOOLS_CONFIG } from '../tenants/tourguardian/tourguardian-persona.js';
+import { enforceBalanceBeforeInference, processInferenceCost } from '../billing/token-deductor.js';
 
 /**
  * Entrypoint for incoming WhatsApp webhooks.
- * Validates the payload and orchestrates the routing securely.
+ * Validates the payload and orchestrates the routing and AI inference securely.
  */
-export function handleIncomingWebhook(payload: MetaWebhookPayload) {
+export async function handleIncomingWebhook(payload: MetaWebhookPayload) {
   // Validate basic structural shape
   if (payload.object !== 'whatsapp_business_account' || !payload.entry || payload.entry.length === 0) {
     throw new Error("Invalid webhook payload structure");
@@ -28,25 +32,51 @@ export function handleIncomingWebhook(payload: MetaWebhookPayload) {
   const phoneNumberId = value.metadata.phone_number_id;
   const message = value.messages[0];
   const endUserPhone = message.from;
+  const userText = message.text?.body;
 
   console.log(`\n========================================`);
   console.log(`[INCOMING WEBHOOK] Message from End User: ${endUserPhone}`);
   console.log(`[INCOMING WEBHOOK] Target Business Number: ${phoneNumberId}`);
 
-  // 1. ROUTING: Determine the tenant
+  // 1. ROUTING: Determine the tenant securely
   const tenant = lookupTenant(phoneNumberId);
+  const tenantProfileId = phoneNumberId; // The active route serves as the billing ID locally
   console.log(`[ROUTER DECISION] Successfully Routed to Tenant: ${tenant.toUpperCase()}`);
   console.log(`========================================\n`);
 
-  // 2. DISPATCH
-  let responseData;
+  // 2. DISPATCH & INFERENCE (OpenClaw SDK)
+  if (!userText) {
+      console.log("Ignoring non-text message for MVP constraints.");
+      return { status: "ignored_non_text_message" };
+  }
+
+  // Pre-Inference Billing Gate (Stage 6 Implementation)
+  await enforceBalanceBeforeInference(tenantProfileId);
+
+  let agentConfig;
   if (tenant === 'dealmate') {
     console.log("[DISPATCH NODE] Booting DealMate Persona & injecting Grocery Tools...");
-    // Ideally here we pass DEALMATE_SYSTEM_PROMPT into OpenClaw SDK
-    responseData = { status: 'Dispatched to DealMate' };
+    agentConfig = { systemPrompt: DEALMATE_SYSTEM_PROMPT, tools: DEALMATE_TOOLS_CONFIG };
   } else if (tenant === 'tourguardian') {
     console.log("[DISPATCH NODE] Booting TourGuardian Persona & injecting Itinerary Tools...");
-    responseData = { status: 'Dispatched to TourGuardian' };
+    agentConfig = { systemPrompt: TOURGUARDIAN_SYSTEM_PROMPT, tools: TOURGUARDIAN_TOOLS_CONFIG };
+  }
+
+  let responseData;
+  if (agentConfig) {
+      // Intialize OpenClaw Agent
+      const aiBrain = new Agent({
+          model: 'nvidia-nemo',
+          systemPrompt: agentConfig.systemPrompt,
+          tools: agentConfig.tools as any
+      });
+
+      // Securely run inference with native context
+      const finalReply = await aiBrain.run(userText);
+      responseData = { reply: finalReply };
+
+      // Post-Inference Billing Deduction (Mocking 50 input, 150 output tokens usage)
+      await processInferenceCost(tenantProfileId, endUserPhone, 50, 150);
   }
   
   return { tenant, endUserPhone, message, responseData };
