@@ -20,12 +20,13 @@ export async function handleIncomingWebhook(payload: MetaWebhookPayload) {
   }
 
   const entry = payload.entry[0];
-  if (!entry.changes || entry.changes.length === 0) {
+  if (!entry || !entry.changes || entry.changes.length === 0) {
     console.log("No changes in this payload. Ignoring.");
     return;
   }
 
   const change = entry.changes[0];
+  if (!change || !change.value) return;
   const value = change.value;
 
   if (!value.messages || value.messages.length === 0) {
@@ -35,6 +36,7 @@ export async function handleIncomingWebhook(payload: MetaWebhookPayload) {
 
   const phoneNumberId = value.metadata.phone_number_id;
   const message = value.messages[0];
+  if (!message) return;
   const endUserPhone = message.from;
   const userText = message.text?.body;
 

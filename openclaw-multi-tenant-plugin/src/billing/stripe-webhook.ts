@@ -1,4 +1,4 @@
-import { query } from '../database/postgres-client';
+import { query } from '../database/postgres-client.js';
 
 /**
  * Receives incoming webhooks strictly from Stripe when a Business Client buys more usage credits.

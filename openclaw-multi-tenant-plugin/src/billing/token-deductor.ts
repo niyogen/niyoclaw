@@ -1,4 +1,4 @@
-import { checkUserBalance, deductTokens, logTokenUsage } from '../database/queries-balances';
+import { checkUserBalance, deductTokens, logTokenUsage } from '../database/queries-balances.js';
 
 /**
  * Security & Billing Middleware
