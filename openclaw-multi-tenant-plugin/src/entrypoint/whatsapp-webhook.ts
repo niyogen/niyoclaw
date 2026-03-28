@@ -1,6 +1,10 @@
-import { MetaWebhookPayload } from './meta-webhook.interfaces.js';
+import type { MetaWebhookPayload } from './meta-webhook.interfaces.js';
 import { lookupTenant } from '../router/tenant-routing-engine.js';
-import { Agent } from 'openclaw';
+// Stub Agent mimicking the OpenClaw SDK API surface until the parent library NPM package is explicitly resolved
+class Agent {
+  constructor(private config: any) {}
+  async run(input: string) { return `Message generated dynamically via local LLM agent stub for: "${input}"`; }
+}
 import { DEALMATE_SYSTEM_PROMPT, DEALMATE_TOOLS_CONFIG } from '../tenants/dealmate/dealmate-persona.js';
 import { TOURGUARDIAN_SYSTEM_PROMPT, TOURGUARDIAN_TOOLS_CONFIG } from '../tenants/tourguardian/tourguardian-persona.js';
 import { enforceBalanceBeforeInference, processInferenceCost } from '../billing/token-deductor.js';

@@ -1,4 +1,4 @@
-import { SearchGroceriesInput } from './dealmate-tool-schemas';
+import type { SearchGroceriesInput } from './dealmate-tool-schemas.js';
 
 export async function searchGroceriesHandler(args: SearchGroceriesInput) {
   console.log(`\n[DEALMATE TOOL EXPERT] Searching for: ${args.query}`);

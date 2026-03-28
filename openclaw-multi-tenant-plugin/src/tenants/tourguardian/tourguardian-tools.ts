@@ -1,4 +1,4 @@
-import { FetchItineraryInput, BookTourInput } from './tourguardian-tool-schemas';
+import type { FetchItineraryInput, BookTourInput } from './tourguardian-tool-schemas.js';
 
 export async function fetchItineraryHandler(args: FetchItineraryInput) {
   console.log(`\n[TOURGUARDIAN TOOL EXPERT] Fetching itinerary for Booking Code: ${args.bookingReference}`);
