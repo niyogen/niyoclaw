@@ -11,14 +11,13 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "openclaw": "file:../openclaw",
-    "zod": "^3.24.2"
+    "dotenv": "^17.3.1",
+    "pg": "^8.20.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "@types/pg": "^8.20.0",
     "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "zod": "^4.3.6"
   }
 }
