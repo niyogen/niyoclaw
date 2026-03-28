@@ -75,6 +75,25 @@ export async function handleIncomingWebhook(payload: MetaWebhookPayload) {
       const finalReply = await aiBrain.run(userText);
       responseData = { reply: finalReply };
 
+      // CRITICAL: Actually send the generated text back to the physical end user via Meta API!
+      if (process.env.META_ACCESS_TOKEN) {
+        await fetch(`https://graph.facebook.com/v22.0/${phoneNumberId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.META_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: endUserPhone,
+            type: 'text',
+            text: { body: finalReply }
+          })
+        });
+        console.log(`[OUTBOUND] Successfully sent WhatsApp reply to ${endUserPhone}`);
+      }
+
       // Post-Inference Billing Deduction (Mocking 50 input, 150 output tokens usage)
       await processInferenceCost(tenantProfileId, endUserPhone, 50, 150);
   }
