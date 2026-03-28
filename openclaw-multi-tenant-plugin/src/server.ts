@@ -42,6 +42,20 @@ const server = http.createServer((req, res) => {
       res.writeHead(403);
       res.end('Forbidden');
     }
+  } else if (req.method === 'GET' && req.url === '/health') {
+    import('./database/postgres-client.js').then(async ({ pingDatabase }) => {
+      const dbStatus = await pingDatabase();
+      const envStatus = process.env.META_ACCESS_TOKEN && process.env.DATABASE_URL ? 'configured' : 'missing';
+      const health = {
+        system: dbStatus && envStatus === 'configured' ? 'healthy' : 'degraded',
+        database_rds: dbStatus ? 'connected' : 'disconnected',
+        api_keys: envStatus,
+        uptime_seconds: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString()
+      };
+      res.writeHead(dbStatus && envStatus === 'configured' ? 200 : 503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(health, null, 2));
+    });
   } else {
     res.writeHead(404);
     res.end('Not Found');
